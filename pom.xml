@@ -16,12 +16,11 @@
     </properties>
 
     <dependencies>
-        <!-- Dependencia con vulnerabilidad conocida — para demo del pipeline -->
-        <!-- Log4Shell (CVE-2021-44228): OWASP Dependency Check la detectará -->
+        <!-- ✅ BIEN: version actualizada y sin CVEs conocidos -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
-            <version>2.14.1</version>
+            <version>2.23.1</version>
         </dependency>
 
         <dependency>
