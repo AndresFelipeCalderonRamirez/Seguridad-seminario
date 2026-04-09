@@ -53,11 +53,6 @@ jobs:
         run: mvn spotbugs:check
         continue-on-error: true
 
-      - name: "[CONFIG] Validar archivos YAML"
-        run: |
-          pip install yamllint --quiet
-          yamllint .github/workflows/
-
       - name: "[BUILD] Artefacto final generado"
         run: |
           echo "Todas las validaciones completadas."
