@@ -1,4 +1,4 @@
-name: CI Security Pipeline
+name: CI Security Pipeline (Java Maven)
 
 on:
   push:
@@ -11,44 +11,59 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout del código
+      # 1. Checkout
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Configurar entorno (ejemplo Node.js, cámbialo si usas otro)
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      # 2. Configurar Java
+      - name: Setup JDK
+        uses: actions/setup-java@v4
         with:
-          node-version: '18'
+          distribution: 'temurin'
+          java-version: '17'
 
-      - name: Install dependencies
-        run: npm install
+      # 3. Cache de Maven (mejora rendimiento)
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-m2
+
+      # 4. Build (compila el proyecto)
+      - name: Build with Maven
+        run: mvn clean compile
 
       # -----------------------------
-      # 3. SAST (Análisis estático)
+      # 5. SAST (CodeQL para Java)
       # -----------------------------
-      - name: Run SAST with CodeQL
+      - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: javascript
+          languages: java
 
-      - name: Perform CodeQL Analysis
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Analyze CodeQL
         uses: github/codeql-action/analyze@v3
 
       # -----------------------------
-      # 4. SCA (Dependencias)
+      # 6. SCA (Dependencias Maven)
       # -----------------------------
-      - name: Dependency Audit
-        run: npm audit --audit-level=high
+      - name: OWASP Dependency Check
+        run: |
+          mvn org.owasp:dependency-check-maven:check
 
       # -----------------------------
-      # 5. Detección de secretos
+      # 7. Detección de secretos
       # -----------------------------
       - name: Scan for secrets (Gitleaks)
         uses: gitleaks/gitleaks-action@v2
 
       # -----------------------------
-      # 6. Validación de configuración
+      # 8. Validación de configuración
       # -----------------------------
       - name: Validate YAML files
         run: |
@@ -61,7 +76,7 @@ jobs:
           find . -name "*.json" -exec jq empty {} \;
 
       # -----------------------------
-      # 7. Build (solo si todo pasa)
+      # 9. Build final (fail fast)
       # -----------------------------
-      - name: Build project
-        run: npm run build
+      - name: Package application
+        run: mvn clean package
