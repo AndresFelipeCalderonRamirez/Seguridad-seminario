@@ -4,7 +4,7 @@
 
 Este prototipo implementa un pipeline de seguridad completo que materializa los conceptos teóricos presentados en el trabajo de investigación sobre "Validación de configuraciones seguras durante el Build". El sistema demuestra la viabilidad de integrar controles de seguridad automatizados en etapas tempranas del ciclo de vida del software bajo el enfoque DevSecOps.
 
-## 🏗️ Arquitectura del Prototipo
+##  Arquitectura del Prototipo
 
 ### Componentes Principales
 
