@@ -1,7 +1,7 @@
 ---
 name: Validacion de Seguridad en el Build
 
-"on":
+on:
   push:
     branches:
       - "**"
@@ -43,6 +43,9 @@ jobs:
             -DfailBuildOnCVSS=7 \
             -Dformat=HTML \
             -DoutputDirectory=reports
+
+      - name: Crear directorio de reportes
+        run: mkdir -p reports
 
       - name: Publicar reporte OWASP
         uses: actions/upload-artifact@v4
