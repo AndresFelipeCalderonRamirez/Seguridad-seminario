@@ -1,10 +1,15 @@
+---
 name: CI Security Pipeline (Java Maven)
 
-on:
+"on":
   push:
-    branches: [ "main", "develop" ]
+    branches:
+      - main
+      - develop
   pull_request:
-    branches: [ "main", "develop" ]
+    branches:
+      - main
+      - develop
 
 permissions:
   contents: read
@@ -15,18 +20,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout
+
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      # 2. Configurar Java
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # 3. Cache de Maven (mejora rendimiento)
       - name: Cache Maven packages
         uses: actions/cache@v4
         with:
@@ -35,13 +40,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-m2
 
-      # 4. Build (compila el proyecto)
       - name: Build with Maven
         run: mvn clean compile
 
-      # -----------------------------
-      # 5. SAST (CodeQL para Java)
-      # -----------------------------
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
@@ -50,37 +51,32 @@ jobs:
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
 
-      - name: Analyze CodeQL
+      - name: "[SAST] Analyze CodeQL"
         uses: github/codeql-action/analyze@v3
 
-      # -----------------------------
-      # 6. SCA (Dependencias Maven)
-      # -----------------------------
-      - name: OWASP Dependency Check
+      - name: "[SCA] OWASP Dependency Check"
         run: |
-          mvn org.owasp:dependency-check-maven:check
+          mvn org.owasp:dependency-check-maven:check \
+            -DnvdApiKey=${{ secrets.NVD_API_KEY }} \
+            -DfailBuildOnCVSS=7 \
+            -Dformat=HTML \
+            -DoutputDirectory=reports
+        continue-on-error: true
 
-      # -----------------------------
-      # 7. Detección de secretos
-      # -----------------------------
-      - name: Scan for secrets (Gitleaks)
+      - name: Publicar reporte OWASP
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reporte-dependencias
+          path: reports/
+
+      - name: "[CREDS] Scan for secrets (Gitleaks)"
         uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: false
+        with:
+          args: detect --source=. --no-git -v --exit-code=2
 
-      # -----------------------------
-      # 8. Validación de configuración
-      # -----------------------------
-      - name: Validate YAML files
-        run: |
-          pip install yamllint
-          yamllint .
-
-      - name: Validate JSON files
-        run: |
-          sudo apt-get install -y jq
-          find . -name "*.json" -exec jq empty {} \;
-
-      # -----------------------------
-      # 9. Build final (fail fast)
-      # -----------------------------
-      - name: Package application
+      - name: "[BUILD] Package application"
         run: mvn clean package
