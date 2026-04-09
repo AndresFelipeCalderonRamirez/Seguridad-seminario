@@ -38,31 +38,31 @@ jobs:
         echo "### SpotBugs + FindSecBugs" >> $GITHUB_STEP_SUMMARY
         mvn spotbugs:check -Dspotbugs.effort=Max -Dspotbugs.threshold=Low || echo "SPOTBUGS_ISSUES=true" >> $GITHUB_ENV
         if [ -f target/spotbugsXml.xml ]; then
-          echo "✅ Análisis SpotBugs completado" >> $GITHUB_STEP_SUMMARY
+          echo "[OK] Análisis SpotBugs completado" >> $GITHUB_STEP_SUMMARY
           echo "- Vulnerabilidades detectadas en el código fuente" >> $GITHUB_STEP_SUMMARY
         else
-          echo "⚠️ SpotBugs no generó reporte" >> $GITHUB_STEP_SUMMARY
+          echo "[ADVERTENCIA] SpotBugs no generó reporte" >> $GITHUB_STEP_SUMMARY
         fi
         echo "" >> $GITHUB_STEP_SUMMARY
 
-    - name: 🔐 [CREDS] Credential Leak Detection
+    - name: [CREDS] Credential Leak Detection
       id: credentials
       run: |
-        echo "## 🔐 Detección de Credenciales Expuestas" >> $GITHUB_STEP_SUMMARY
+        echo "## Detección de Credenciales Expuestas" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         
         # Gitleaks para detectar credenciales
         echo "### Gitleaks Scan" >> $GITHUB_STEP_SUMMARY
-        wget https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64
+        wget https://github.com/gitleaks/gitleaks/releases/download/v8.18.2/gitleaks-linux-amd64
         chmod +x gitleaks-linux-amd64
         ./gitleaks-linux-amd64 detect --source=. --verbose --report-format=json --report-path=gitleaks-report.json || echo "GITLEAKS_ISSUES=true" >> $GITHUB_ENV
         
         if [ -f gitleaks-report.json ]; then
           ISSUES=$(cat gitleaks-report.json | jq '. | length')
-          echo "🚨 **$ISSUES credenciales potencialmente expuestas detectadas**" >> $GITHUB_STEP_SUMMARY
+          echo "[ALERTA] **$ISSUES credenciales potencialmente expuestas detectadas**" >> $GITHUB_STEP_SUMMARY
           echo "- Revisar archivo gitleaks-report.json para detalles" >> $GITHUB_STEP_SUMMARY
         else
-          echo "✅ No se detectaron credenciales expuestas" >> $GITHUB_STEP_SUMMARY
+          echo "[OK] No se detectaron credenciales expuestas" >> $GITHUB_STEP_SUMMARY
         fi
         echo "" >> $GITHUB_STEP_SUMMARY
 
@@ -85,10 +85,10 @@ jobs:
           
         if [ -f security-reports/dependency-check-report.json ]; then
           VULNS=$(cat security-reports/dependency-check-report.json | jq '.dependencies[] | select(.vulnerabilities != null) | .vulnerabilities | length' | awk '{sum+=$1} END {print sum+0}')
-          echo "🚨 **$VULNS vulnerabilidades en dependencias detectadas**" >> $GITHUB_STEP_SUMMARY
+          echo "[ALERTA] **$VULNS vulnerabilidades en dependencias detectadas**" >> $GITHUB_STEP_SUMMARY
           echo "- Ver reporte HTML para análisis detallado" >> $GITHUB_STEP_SUMMARY
         else
-          echo "✅ No se detectaron vulnerabilidades críticas en dependencias" >> $GITHUB_STEP_SUMMARY
+          echo "[OK] No se detectaron vulnerabilidades críticas en dependencias" >> $GITHUB_STEP_SUMMARY
         fi
         echo "" >> $GITHUB_STEP_SUMMARY
 
@@ -106,18 +106,18 @@ jobs:
         if find . -name "*.yml" -o -name "*.yaml" | head -5 | while read file; do
           python3 -c "import yaml; yaml.safe_load(open('$file'))" 2>>security-reports/yaml-errors.txt || echo "YAML_ERROR=true" >> $GITHUB_ENV
         done; then
-          echo "✅ Archivos YAML válidos" >> $GITHUB_STEP_SUMMARY
+          echo "[OK] Archivos YAML válidos" >> $GITHUB_STEP_SUMMARY
         else
-          echo "⚠️ Errores en archivos YAML detectados" >> $GITHUB_STEP_SUMMARY
+          echo "[ADVERTENCIA] Errores en archivos YAML detectados" >> $GITHUB_STEP_SUMMARY
         fi
         
         # Validar JSON files
         if find . -name "*.json" | head -5 | while read file; do
           python3 -c "import json; json.load(open('$file'))" 2>>security-reports/json-errors.txt || echo "JSON_ERROR=true" >> $GITHUB_ENV
         done; then
-          echo "✅ Archivos JSON válidos" >> $GITHUB_STEP_SUMMARY
+          echo "[OK] Archivos JSON válidos" >> $GITHUB_STEP_SUMMARY
         else
-          echo "⚠️ Errores en archivos JSON detectados" >> $GITHUB_STEP_SUMMARY
+          echo "[ADVERTENCIA] Errores en archivos JSON detectados" >> $GITHUB_STEP_SUMMARY
         fi
         echo "" >> $GITHUB_STEP_SUMMARY
 
@@ -129,7 +129,7 @@ jobs:
         
         # Compilar solo si no hay vulnerabilidades críticas
         if [[ "${{ env.GITLEAKS_ISSUES }}" == "true" ]]; then
-          echo "❌ **BUILD DETENIDO**: Se detectaron credenciales expuestas" >> $GITHUB_STEP_SUMMARY
+          echo "[ERROR] **BUILD DETENIDO**: Se detectaron credenciales expuestas" >> $GITHUB_STEP_SUMMARY
           exit 1
         fi
         
@@ -138,10 +138,10 @@ jobs:
         
         if [ -f target/*.jar ]; then
           JAR_COUNT=$(ls target/*.jar | wc -l)
-          echo "✅ **Build exitoso**: $JAR_COUNT artefactos generados" >> $GITHUB_STEP_SUMMARY
+          echo "[OK] **Build exitoso**: $JAR_COUNT artefactos generados" >> $GITHUB_STEP_SUMMARY
           ls -la target/*.jar >> $GITHUB_STEP_SUMMARY
         else
-          echo "❌ **Build fallido**: No se generaron artefactos" >> $GITHUB_STEP_SUMMARY
+          echo "[ERROR] **Build fallido**: No se generaron artefactos" >> $GITHUB_STEP_SUMMARY
           exit 1
         fi
         echo "" >> $GITHUB_STEP_SUMMARY
@@ -154,27 +154,27 @@ jobs:
         
         echo "### 🎯 Estado General del Pipeline" >> $GITHUB_STEP_SUMMARY
         if [[ "${{ env.GITLEAKS_ISSUES }}" == "true" ]]; then
-          echo "- 🔐 **Credenciales**: ⚠️ Detectadas" >> $GITHUB_STEP_SUMMARY
+          echo "- [CREDENCIALES]: [ALERTA] Detectadas" >> $GITHUB_STEP_SUMMARY
         else
-          echo "- 🔐 **Credenciales**: ✅ Seguras" >> $GITHUB_STEP_SUMMARY
+          echo "- [CREDENCIALES]: [OK] Seguras" >> $GITHUB_STEP_SUMMARY
         fi
         
         if [[ "${{ env.SPOTBUGS_ISSUES }}" == "true" ]]; then
-          echo "- 🔍 **Código**: ⚠️ Vulnerabilidades detectadas" >> $GITHUB_STEP_SUMMARY
+          echo "- [CODIGO]: [ALERTA] Vulnerabilidades detectadas" >> $GITHUB_STEP_SUMMARY
         else
-          echo "- 🔍 **Código**: ✅ Análisis limpio" >> $GITHUB_STEP_SUMMARY
+          echo "- [CODIGO]: [OK] Analisis limpio" >> $GITHUB_STEP_SUMMARY
         fi
         
         if [[ "${{ env.OWASP_ISSUES }}" == "true" ]]; then
-          echo "- 📦 **Dependencias**: ⚠️ Vulnerabilidades detectadas" >> $GITHUB_STEP_SUMMARY
+          echo "- [DEPENDENCIAS]: [ALERTA] Vulnerabilidades detectadas" >> $GITHUB_STEP_SUMMARY
         else
-          echo "- 📦 **Dependencias**: ✅ Seguras" >> $GITHUB_STEP_SUMMARY
+          echo "- [DEPENDENCIAS]: [OK] Seguras" >> $GITHUB_STEP_SUMMARY
         fi
         
         if [[ "${{ env.BUILD_FAILED }}" == "true" ]]; then
-          echo "- 🔨 **Build**: ❌ Fallido" >> $GITHUB_STEP_SUMMARY
+          echo "- [BUILD]: [ERROR] Fallido" >> $GITHUB_STEP_SUMMARY
         else
-          echo "- 🔨 **Build**: ✅ Exitoso" >> $GITHUB_STEP_SUMMARY
+          echo "- [BUILD]: [OK] Exitoso" >> $GITHUB_STEP_SUMMARY
         fi
         echo "" >> $GITHUB_STEP_SUMMARY
         
@@ -185,16 +185,16 @@ jobs:
         
         echo "### 🚀 Recomendaciones" >> $GITHUB_STEP_SUMMARY
         if [[ "${{ env.GITLEAKS_ISSUES }}" == "true" ]]; then
-          echo "- 🔐 **Revisar credenciales expuestas inmediatamente**" >> $GITHUB_STEP_SUMMARY
+          echo "- [RECOMENDACION] Revisar credenciales expuestas inmediatamente" >> $GITHUB_STEP_SUMMARY
         fi
         if [[ "${{ env.OWASP_ISSUES }}" == "true" ]]; then
-          echo "- 📦 **Actualizar dependencias vulnerables**" >> $GITHUB_STEP_SUMMARY
+          echo "- [RECOMENDACION] Actualizar dependencias vulnerables" >> $GITHUB_STEP_SUMMARY
         fi
         if [[ "${{ env.SPOTBUGS_ISSUES }}" == "true" ]]; then
-          echo "- 🔍 **Corregir problemas de código detectados**" >> $GITHUB_STEP_SUMMARY
+          echo "- [RECOMENDACION] Corregir problemas de codigo detectados" >> $GITHUB_STEP_SUMMARY
         fi
 
-    - name: 📤 [ARTIFACTS] Upload Security Reports
+    - name: [ARTIFACTS] Upload Security Reports
       uses: actions/upload-artifact@v4
       if: always()
       with:
@@ -205,7 +205,7 @@ jobs:
           gitleaks-report.json
         retention-days: 30
 
-    - name: 📤 [ARTIFACTS] Upload Build Artifacts
+    - name: [ARTIFACTS] Upload Build Artifacts
       uses: actions/upload-artifact@v4
       if: success()
       with:
@@ -213,15 +213,15 @@ jobs:
         path: target/*.jar
         retention-days: 7
 
-    - name: 🚨 [FAIL-FAST] Critical Issues Check
+    - name: [FAIL-FAST] Critical Issues Check
       if: failure()
       run: |
-        echo "## 🚨 PIPELINE DETENIDO - Principio Fail Fast" >> $GITHUB_STEP_SUMMARY
+        echo "## PIPELINE DETENIDO - Principio Fail Fast" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "El pipeline ha sido detenido debido a problemas críticos de seguridad." >> $GITHUB_STEP_SUMMARY
-        echo "Esto previene la propagación de vulnerabilidades a etapas posteriores." >> $GITHUB_STEP_SUMMARY
+        echo "El pipeline ha sido detenido debido a problemas criticos de seguridad." >> $GITHUB_STEP_SUMMARY
+        echo "Esto previene la propagacion de vulnerabilidades a etapas posteriores." >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Acciones Requeridas:" >> $GITHUB_STEP_SUMMARY
         echo "1. Revisar los reportes de seguridad generados" >> $GITHUB_STEP_SUMMARY
-        echo "2. Corregir las vulnerabilidades críticas identificadas" >> $GITHUB_STEP_SUMMARY
+        echo "2. Corregir las vulnerabilidades criticas identificadas" >> $GITHUB_STEP_SUMMARY
         echo "3. Ejecutar nuevamente el pipeline" >> $GITHUB_STEP_SUMMARY
