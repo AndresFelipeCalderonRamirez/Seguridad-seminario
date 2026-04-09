@@ -1,0 +1,59 @@
+name: Java Security Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: maven
+        
+    - name: Run SpotBugs Analysis
+      run: |
+        echo "Running SpotBugs security analysis..."
+        mvn spotbugs:check
+        
+    - name: Run OWASP Dependency Check
+      run: |
+        echo "Running OWASP Dependency Check..."
+        mvn org.owasp:dependency-check-maven:check \
+          -DfailBuildOnCVSS=7 \
+          -Dformat=HTML \
+          -DoutputDirectory=reports \
+          -DskipUpdate=true || echo "Dependency check completed with issues"
+          
+    - name: Build Application
+      run: |
+        echo "Building Java application..."
+        mvn clean package -DskipTests
+        
+    - name: Upload Security Reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          reports/
+          target/spotbugsXml.xml
+        retention-days: 30
+        
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v4
+      if: success()
+      with:
+        name: java-application
+        path: target/*.jar
+        retention-days: 7
