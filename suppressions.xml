@@ -1,55 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<suppressions>
+<suppressions xmlns="https://dependency-check.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
     <!--
     Archivo de supresión para OWASP Dependency Check
-    Este archivo permite controlar falsos positivos y vulnerabilidades conocidas
-    que no representan un riesgo real para el proyecto.
     -->
 
-    <!-- Suprimir CVEs específicas que ya fueron mitigadas -->
+    <!-- Log4Shell - referencia educativa del prototipo -->
     <suppress>
         <notes><![CDATA[
-            CVE-2021-44228 (Log4Shell) - Versión actualizada de Log4j no es vulnerable
-            Se mantiene como referencia educativa en el proyecto
+            CVE-2021-44228 (Log4Shell) - Se mantiene como referencia educativa en el proyecto
         ]]></notes>
         <cve>CVE-2021-44228</cve>
         <cve>CVE-2021-45046</cve>
     </suppress>
 
-    <!-- Suprimir dependencias de desarrollo y testing -->
+    <!-- Dependencias de desarrollo y testing -->
     <suppress>
         <notes><![CDATA[
             Dependencias utilizadas solo en entorno de desarrollo y pruebas
         ]]></notes>
         <gav regex="true">^.*junit.*$</gav>
         <gav regex="true">^.*mockito.*$</gav>
-        <gav regex="true">^.*test.*$</gav>
         <gav regex="true">^.*hamcrest.*$</gav>
     </suppress>
 
-    <!-- Suprimir herramientas de build y análisis -->
+    <!-- Herramientas de build -->
     <suppress>
         <notes><![CDATA[
             Herramientas de Maven y build que no se despliegan en producción
         ]]></notes>
         <gav regex="true">^.*maven.*$</gav>
         <gav regex="true">^.*spotbugs.*$</gav>
-        <gav regex="true">^.*findbugs.*$</gav>
         <gav regex="true">^.*dependency-check.*$</gav>
     </suppress>
 
-    <!-- Suprimir vulnerabilidades de baja severidad -->
+    <!-- Falsos positivos SLF4J -->
     <suppress>
         <notes><![CDATA[
-            Vulnerabilidades de baja severidad (CVSS < 4.0) que no representan riesgo crítico
-        ]]></notes>
-        <cvssBelow>4.0</cvssBelow>
-    </suppress>
-
-    <!-- Suprimir falsos positivos comunes en SLF4J -->
-    <suppress>
-        <notes><![CDATA[
-            Falsos positivos comunes en SLF4J y APIs de logging
+            Falsos positivos comunes en SLF4J
         ]]></notes>
         <gav regex="true">^.*slf4j.*$</gav>
     </suppress>
