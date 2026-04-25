@@ -7,9 +7,7 @@ import java.sql.Statement;
 import java.lang.Runtime;
 import java.io.*;
 import java.net.*;
-import java.nio.file.*;
 import java.util.Random;
-import java.security.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 import java.util.Base64;
@@ -23,33 +21,33 @@ import java.util.Base64;
  *   3.  Inyección de comandos
  *   4.  Manejo inseguro de excepciones
  *   5.  Path Traversal
- *   6.  Deserialización insegura
- *   7.  Generador de números aleatorios débil (para tokens de seguridad)
- *   8.  Algoritmo de cifrado débil (DES)
- *   9.  Clave criptográfica hardcodeada
- *   10. SSRF (Server-Side Request Forgery)
+ *   6.  Generador de números aleatorios débil (para tokens de seguridad)
+ *   7.  Algoritmo de cifrado débil (DES) + modo ECB
+ *   8.  SSRF (Server-Side Request Forgery)
  */
 public class App {
 
     // ---------------------------------------------------------------
     // 1. CREDENCIALES HARDCODEADAS — detectado por Gitleaks + CodeQL
     // ---------------------------------------------------------------
-    private static final String DB_URL      = "jdbc:mysql://prod-server:3306/appdb";
-    private static final String DB_USER     = "admin";
-    private static final String DB_PASS     = "superSecreta123!";
 
-    // API Key de OpenAI-style — Gitleaks: generic-api-key
-    private static final String API_KEY     = "sk-prod-aK93mX02bLpQ77zR";
+    // Base de datos de producción
+    private static final String DB_URL   = "jdbc:mysql://prod-server:3306/appdb";
+    private static final String DB_USER  = "admin";
+    private static final String DB_PASS  = "superSecreta123!";
 
-    // JWT Secret hardcodeado — Gitleaks: jwt
-    private static final String JWT_SECRET  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.supersecret";
+    // API Key estilo OpenAI — Gitleaks: generic-api-key
+    private static final String API_KEY  = "sk-prod-aK93mX02bLpQ77zR";
 
-    // Credenciales AWS hardcodeadas — Gitleaks: aws-access-token
-    private static final String AWS_KEY     = "AKIAIOSFODNN7EXAMPLE";
-    private static final String AWS_SECRET  = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY";
+    // AWS Access Key ID real — Gitleaks: aws-access-token
+    private static final String AWS_ACCESS_KEY_ID     = "AKIA4HGXYZ1234ABCDEF";
+    private static final String AWS_SECRET_ACCESS_KEY = "Tz8Qp2mNvL9kRjW0xYbF3dCeHuA5sGiOo6nXl1q";
 
-    // Clave de cifrado hardcodeada — CodeQL: hard-coded-key
-    private static final byte[] CRYPTO_KEY  = "1234567890123456".getBytes();
+    // Token de GitHub personal — Gitleaks: github-pat
+    private static final String GITHUB_TOKEN = "ghp_xK92mPqL7nRtYv3wZjA8bCdEfGhIjKlMnOp";
+
+    // Clave de cifrado hardcodeada
+    private static final byte[] CRYPTO_KEY = "1234567890123456".getBytes();
 
     public static void main(String[] args) throws Exception {
         String usuarioInput = args.length > 0 ? args[0] : "test";
@@ -128,16 +126,16 @@ public class App {
     }
 
     // ---------------------------------------------------------------
-    // 6. CIFRADO DÉBIL (DES) + CLAVE HARDCODEADA — detectado por CodeQL
+    // 6. CIFRADO DÉBIL (DES) + MODO ECB — detectado por CodeQL
     //    DES usa claves de 56 bits, considerado roto desde 1999
+    //    ECB no usa IV, los patrones del plaintext son visibles
     // ---------------------------------------------------------------
     public static String cifrarDato(String dato) throws Exception {
-        // VULNERABLE: DES es débil, debe usarse AES-256
         SecretKeySpec keySpec = new SecretKeySpec(
                 new byte[]{1,2,3,4,5,6,7,8}, "DES"
         );
+        // VULNERABLE: DES/ECB
         Cipher cipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
-        // VULNERABLE: modo ECB no usa IV, patrones del plaintext son visibles
         cipher.init(Cipher.ENCRYPT_MODE, keySpec);
         byte[] encrypted = cipher.doFinal(dato.getBytes());
         return Base64.getEncoder().encodeToString(encrypted);

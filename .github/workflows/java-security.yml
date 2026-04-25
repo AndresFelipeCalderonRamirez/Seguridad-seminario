@@ -61,8 +61,7 @@ jobs:
             -DnvdApiKey=${{ secrets.NVD_API_KEY }} \
             -DfailBuildOnCVSS=7 \
             -Dformat=HTML \
-            -DreportOutputDirectory=${GITHUB_WORKSPACE}/reports \
-            -DsuppressionFiles=${GITHUB_WORKSPACE}/suppressions.xml
+            -DreportOutputDirectory=${GITHUB_WORKSPACE}/reports
         continue-on-error: true
 
       - name: Publicar reporte OWASP
