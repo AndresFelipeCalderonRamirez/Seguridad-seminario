@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
-    <!-- 
+<suppressions>
+    <!--
     Archivo de supresión para OWASP Dependency Check
     Este archivo permite controlar falsos positivos y vulnerabilidades conocidas
     que no representan un riesgo real para el proyecto.
     -->
-    
+
     <!-- Suprimir CVEs específicas que ya fueron mitigadas -->
     <suppress>
         <notes><![CDATA[
@@ -15,7 +15,7 @@
         <cve>CVE-2021-44228</cve>
         <cve>CVE-2021-45046</cve>
     </suppress>
-    
+
     <!-- Suprimir dependencias de desarrollo y testing -->
     <suppress>
         <notes><![CDATA[
@@ -26,7 +26,7 @@
         <gav regex="true">^.*test.*$</gav>
         <gav regex="true">^.*hamcrest.*$</gav>
     </suppress>
-    
+
     <!-- Suprimir herramientas de build y análisis -->
     <suppress>
         <notes><![CDATA[
@@ -37,7 +37,7 @@
         <gav regex="true">^.*findbugs.*$</gav>
         <gav regex="true">^.*dependency-check.*$</gav>
     </suppress>
-    
+
     <!-- Suprimir vulnerabilidades de baja severidad -->
     <suppress>
         <notes><![CDATA[
@@ -45,7 +45,7 @@
         ]]></notes>
         <cvssBelow>4.0</cvssBelow>
     </suppress>
-    
+
     <!-- Suprimir falsos positivos comunes en SLF4J -->
     <suppress>
         <notes><![CDATA[

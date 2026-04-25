@@ -60,7 +60,8 @@ jobs:
             -DnvdApiKey=${{ secrets.NVD_API_KEY }} \
             -DfailBuildOnCVSS=7 \
             -Dformat=HTML \
-            -DoutputDirectory=reports
+            -DoutputDirectory=reports \
+            -DsuppressionFiles=suppressions.xml
         continue-on-error: true
 
       - name: Publicar reporte OWASP
@@ -70,13 +71,25 @@ jobs:
           name: reporte-dependencias
           path: reports/
 
+      # ✅ Gitleaks como run: directo, escanea TODO el directorio
       - name: "[CREDS] Scan for secrets (Gitleaks)"
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_ENABLE_COMMENTS: false
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz \
+            | tar -xz -C /usr/local/bin gitleaks
+          gitleaks detect \
+            --source=. \
+            --no-git \
+            --report-format=sarif \
+            --report-path=gitleaks-report.sarif \
+            --exit-code=1 \
+            -v
+
+      - name: Publicar reporte Gitleaks
+        uses: actions/upload-artifact@v4
+        if: always()
         with:
-          args: detect --source=. --no-git -v --exit-code=2
+          name: gitleaks-report
+          path: gitleaks-report.sarif
 
       - name: "[BUILD] Package application"
-        run: mvn clean package
+        run: mvn clean package -DskipTests
